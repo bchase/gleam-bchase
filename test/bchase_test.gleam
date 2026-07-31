@@ -28,3 +28,9 @@ pub fn unsafe_cast_test() {
   |> unsafe.cast
   |> should.equal(123)
 }
+
+pub fn unsafe_apply_test() {
+  unsafe.apply(["gleam", "bool"], "negate", [False])
+  |> should.be_ok
+  |> should.equal(True)
+}
