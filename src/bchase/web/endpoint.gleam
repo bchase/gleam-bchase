@@ -2,10 +2,10 @@ import gleam/string
 import bchase/json.{type Transcoder} as bchase_json
 
 pub type SSE(t) = Endpoint(Nil, t)
-pub type Websocket(input, output) = Endpoint(input, output)
+pub type WebSocket(input, output) = Endpoint(input, output)
 
 pub opaque type Type {
-  Websocket
+  WebSocket
   SSE
 }
 
@@ -24,8 +24,8 @@ pub fn websocket(
   path path: List(String),
   input input: Transcoder(input),
   output output: Transcoder(output),
-) -> Websocket(input, output) {
-  Endpoint(type_: Websocket, path:, input:, output:)
+) -> WebSocket(input, output) {
+  Endpoint(type_: WebSocket, path:, input:, output:)
 }
 
 pub fn sse(
