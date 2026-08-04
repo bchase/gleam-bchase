@@ -1,38 +1,19 @@
 import gleam/string
-import bchase/json.{type Transcoder} as bchase_json
+import bchase/json.{type Transcoder} as _
 
 pub type SSE(t) = Endpoint(Nil, t)
 pub type WebSocket(input, output) = Endpoint(input, output)
 
-pub opaque type Type {
-  WebSocket
-  SSE
-}
-
-pub opaque type Endpoint(input, output) {
-  Endpoint(
-    type_: Type,
-    path: List(String),
+pub type Endpoint(input, output) {
+  WebSocket(
+    path_segments: List(String),
     input: Transcoder(input),
     output: Transcoder(output),
   )
-}
-
-//
-
-pub fn websocket(
-  path path: List(String),
-  input input: Transcoder(input),
-  output output: Transcoder(output),
-) -> WebSocket(input, output) {
-  Endpoint(type_: WebSocket, path:, input:, output:)
-}
-
-pub fn sse(
-  path path: List(String),
-  json json: Transcoder(t),
-) -> SSE(t) {
-  Endpoint(type_: SSE, path:, input: bchase_json.nil(), output: json)
+  SSE(
+    path_segments: List(String),
+    output: Transcoder(output),
+  )
 }
 
 //
@@ -40,23 +21,5 @@ pub fn sse(
 pub fn path(
   endpoint endpoint: Endpoint(a, b)
 ) -> String {
-  path_(endpoint.path)
-}
-
-pub fn path_(
-  path path: List(String),
-) -> String {
-  "/" <> { path |> string.join("/") }
-}
-
-pub fn input(
-  endpoint endpoint: Endpoint(input, input)
-) -> Transcoder(input) {
-  endpoint.input
-}
-
-pub fn output(
-  endpoint endpoint: Endpoint(input, output)
-) -> Transcoder(output) {
-  endpoint.output
+  "/" <> { endpoint.path_segments |> string.join("/") }
 }
