@@ -1,3 +1,5 @@
+import bchase/io
+import gleam/string
 import gleam/pair
 import bchase/json.{type Transcoder} as _
 import bchase/web/sse.{type SSE}
@@ -11,26 +13,26 @@ import gleam/http/request.{type Request}
 import mist
 
 pub fn serve_via_mist(
+  sse sse: SSE(broadcast),
   listen listen:
     fn(Request(mist.Connection), ctx) -> Result(Selector(broadcast), err),
-  sse sse: SSE(broadcast),
-  err from_err: fn(err, Request(mist.Connection), ctx) -> Response(mist.ResponseData),
 ) -> #(List(String), fn(Request(mist.Connection), ctx) -> Response(mist.ResponseData)) {
-  fn(req, ctx) {
-    case listen(req, ctx) {
-      Error(err) ->
-        from_err(err, req, ctx)
+  fn(request, ctx) {
+    let listen =
+      // NOTE: closure used to ensure `process.new_subject` is `mist` process
+      fn() {
+        listen(request, ctx)
+        |> result.map_error(string.inspect)
+      }
 
-      Ok(selector) ->
-        mist.server_sent_events(
-          request: req,
-          initial_response: response.new(200),
-          init: init(_, selector),
-          loop: fn(state, msg, conn) {
-            update(state, msg, conn, sse.json, send_mist)
-          },
-        )
-    }
+    mist.server_sent_events(
+      request:,
+      initial_response: response.new(200),
+      init: init(_, listen),
+      loop: fn(state, msg, conn) {
+        update(state, msg, conn, sse, send_mist)
+      },
+    )
   }
   |> pair.new(sse.path_segments, _)
 }
@@ -53,39 +55,48 @@ fn send_mist(
 
 fn init(
   self: Subject(Msg(broadcast)),
-  selector: Selector(broadcast),
-) -> State(broadcast, conn) {
-  process.send(self, Init(selector:))
-
-  State
-}
-
-type State(broadcast, conn) {
-  State
+  listen: fn() -> Result(Selector(broadcast), String),
+) -> Nil {
+  process.send(self, Init(listen:))
 }
 
 type Msg(broadcast) {
-  Init(selector: Selector(broadcast))
+  Init(listen: fn() -> Result(Selector(broadcast), String))
   Broadcast(msg: broadcast)
 }
 
 fn update(
-  state: State(broadcast, conn),
+  state: Nil,
   msg: Msg(broadcast),
   conn: conn,
-  json: Transcoder(broadcast),
+  sse: SSE(broadcast),
   send: fn(Json, conn) -> Nil,
-) -> actor.Next(State(broadcast, conn), Msg(broadcast)) {
+) -> actor.Next(Nil, Msg(broadcast)) {
   case msg {
-    Init(selector: ) ->
-      selector
-      |> process.map_selector(Broadcast)
-      |> process.select(process.new_subject())
-      |> actor.with_selector(actor.continue(state), _)
+    Init(listen:) ->
+      case listen() {
+        Ok(selector) ->
+          state
+          |> actor.continue
+          |> actor.with_selector(
+            selector
+            |> process.map_selector(Broadcast)
+          )
+
+        Error(err) -> {
+          io.println_error(
+            "Failed to serve SSE `EventSource` for " <>
+            string.inspect(sse.path) <> ": " <>
+            err
+          )
+
+          actor.stop()
+        }
+      }
 
     Broadcast(msg:) -> {
       msg
-      |> json.encode
+      |> sse.json.encode
       |> send(conn)
 
       actor.continue(state)
