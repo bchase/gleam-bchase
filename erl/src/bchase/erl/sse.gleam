@@ -14,12 +14,12 @@ pub fn serve_via_mist(
   listen listen:
     fn(Request(mist.Connection), ctx) -> Result(Selector(broadcast), err),
   sse sse: SSE(broadcast),
-  err from_err: fn(err) -> Response(mist.ResponseData),
+  err from_err: fn(err, Request(mist.Connection), ctx) -> Response(mist.ResponseData),
 ) -> #(List(String), fn(Request(mist.Connection), ctx) -> Response(mist.ResponseData)) {
   fn(req, ctx) {
     case listen(req, ctx) {
       Error(err) ->
-        from_err(err)
+        from_err(err, req, ctx)
 
       Ok(selector) ->
         mist.server_sent_events(
