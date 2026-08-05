@@ -80,6 +80,7 @@ fn update(
     Init(selector: ) ->
       selector
       |> process.map_selector(Broadcast)
+      |> process.select(process.new_subject())
       |> actor.with_selector(actor.continue(state), _)
 
     Broadcast(msg:) -> {
