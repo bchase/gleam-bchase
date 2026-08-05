@@ -3,7 +3,7 @@ import bchase/function
 import bchase/io
 import bchase/unsafe
 import bchase/js/object
-import bchase/web/endpoint.{type Endpoint}
+import bchase/web/sse.{type SSE}
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
 import gleam/list
@@ -38,7 +38,7 @@ pub fn log_open_close_err() -> Overrides(t) {
     }),
     on_parse_err: Some(fn(data, errs, _dispatch) {
       io.println_error(
-        "`Endpoint` parse error: " <> string.inspect(errs) <> "\n" <>
+        "`SSE` parse error: " <> string.inspect(errs) <> "\n" <>
         "MSG: " <> string.inspect(data)
       )
     }),
@@ -46,7 +46,7 @@ pub fn log_open_close_err() -> Overrides(t) {
 }
 
 pub fn connect(
-  endpoint sse: Endpoint(Nil, t),
+  endpoint sse: SSE(t),
   on_message f: fn(t) -> Nil,
   overrides overrides: Overrides(t),
 ) -> Result(EventSource, Nil) {
@@ -63,13 +63,13 @@ pub fn connect(
       })
     })
 
-  let path = endpoint.path(endpoint: sse)
+  let path = sse.path(endpoint: sse)
   let event_source = connect(path, False)
 
   eventsource.on_open(event_source, on_open(path, _, f))
   eventsource.on_close(event_source, on_close(path, _, f))
   eventsource.on_message(event_source, fn(evt) {
-    case parse_msg_data(evt:, decoder: endpoint.output(sse).decoder()) {
+    case parse_msg_data(evt:, decoder: sse.json.decoder()) {
       Ok(x) -> f(x)
       Error(#(data, errs)) -> on_parse_err(data, errs, f)
     }
