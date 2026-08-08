@@ -1,5 +1,16 @@
 import gleam/result
 
+pub fn guard(
+  result result: Result(a, err),
+  fail fail: fn(err) -> b,
+  cont cont: fn(a) -> b,
+) -> b {
+  case result {
+    Ok(x) -> cont(x)
+    Error(err) -> fail(err)
+  }
+}
+
 pub fn try_fail(
   result result: Result(a, err1),
   err err: err2,
