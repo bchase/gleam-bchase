@@ -20,7 +20,9 @@ export function set_item(ls, key, val) {
 
 export function get_item(ls, key) {
   const val = ls.getItem(key);
-  return val ? val : undefined;
+  return val
+    ? Result$Ok(val)
+    : Result$Error(undefined);
 }
 
 export function remove_item(ls, key) {
