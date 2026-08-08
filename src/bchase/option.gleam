@@ -11,3 +11,12 @@ pub fn guard(
   }
 }
 
+pub fn pair(
+  x: Option(a),
+  y: Option(b),
+) -> Option(#(a, b)) {
+  case x, y {
+    Some(x), Some(y) -> Some(#(x, y))
+    _, _ -> None
+  }
+}
