@@ -14,15 +14,15 @@ export function local_storage() {
     : Result$Error(undefined);
 }
 
-export function set_item(key, val) {
-  return globalThis.localStorage.setItem(key, val);
+export function set_item(ls, key, val) {
+  return ls.setItem(key, val);
 }
 
-export function get_item(key) {
-  const val = globalThis.localStorage.getItem(key);
+export function get_item(ls, key) {
+  const val = ls.getItem(key);
   return val ? val : undefined;
 }
 
-export function remove_item(key) {
-  return globalThis.localStorage.removeItem(key);
+export function remove_item(ls, key) {
+  return ls.removeItem(key);
 }
