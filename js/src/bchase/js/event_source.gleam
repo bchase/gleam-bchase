@@ -3,7 +3,7 @@ import bchase/function
 import bchase/io
 import bchase/unsafe
 import bchase/js/object
-import bchase/web/sse.{type SSE}
+import bchase/web/sse
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
 import gleam/list
@@ -11,8 +11,11 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import plinth/browser/event as browser
-import plinth/browser/eventsource.{type EventSource}
+import plinth/browser/eventsource
 import plinth/browser/message_event as msg
+
+pub type SSE(t) = sse.SSE(t)
+pub type EventSource = eventsource.EventSource
 
 pub type Overrides(t) {
   Overrides(
