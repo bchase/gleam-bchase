@@ -2,6 +2,7 @@ import gleam/dict.{type Dict}
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json.{type Json}
 import gleam/option.{type Option}
+import gleam/time/timestamp.{type Timestamp}
 
 pub type Transcoder(t) {
   Transcoder(
@@ -18,8 +19,14 @@ pub const float = Transcoder(json.float, decode_float)
 
 pub const bool = Transcoder(json.bool, decode_bool)
 
-pub fn nil() {
-  Transcoder(fn(_) { json.null() }, fn() { decode.success(Nil) })
+pub const nil = Transcoder(encode_nil, decoder_nil)
+
+pub fn encode_nil(_nil: Nil) {
+  json.null()
+}
+
+pub fn decoder_nil() -> Decoder(Nil) {
+  decode.success(Nil)
 }
 
 pub fn result(
@@ -102,4 +109,27 @@ pub fn decoder_result_err(
 ) -> Decoder(Result(t, err)) {
   use err <- decode.field("error", decoder_error)
   decode.success(Error(err))
+}
+
+//
+
+pub const timestamp = Transcoder(encode_timestamp, decoder_timestamp)
+
+pub fn encode_timestamp(
+  timestamp timestamp: Timestamp,
+) -> Json {
+  let #(seconds, nanoseconds) =
+    timestamp.to_unix_seconds_and_nanoseconds(timestamp)
+
+  json.object([
+    #("s", json.int(seconds)),
+    #("ns", json.int(nanoseconds)),
+  ])
+}
+
+pub fn decoder_timestamp() -> Decoder(Timestamp) {
+  use s <- decode.field("s", decode.int)
+  use ns <- decode.field("ns", decode.int)
+
+  decode.success(timestamp.from_unix_seconds_and_nanoseconds(s, ns))
 }
